@@ -23,33 +23,29 @@ class CalendarModel {
     // date
     let date: Date
     // yyyy-MM-dd
-    private lazy var dateString: String = {
-        CalendarTool.dateFormatter.string(from: date)
-    }()
-    private lazy var dateArr = dateString.components(separatedBy: "-").map{ Int($0)! }
+    lazy var dateString: String = CalendarTool.dateFormatter.string(from: date)
     
-    private lazy var chineseDateString: String = {
-        CalendarTool.chineseDateFormatter.string(from: date)
-    }()
-    private lazy var chineseDateArr = chineseDateString.components(separatedBy: "-")
-    
+    lazy var dateComponents = CalendarTool.calendar.dateComponents([.year,.month,.day], from: date)
     // yyyy
-    lazy var year = dateArr[0]
+    lazy var year = dateComponents.year!
     // MM
-    lazy var month = dateArr[1]
+    lazy var month = dateComponents.month!
     // dd
-    lazy var day = dateArr[2]
+    lazy var day = dateComponents.day!
+    
+    lazy var chineseDateString: String = CalendarTool.chineseDateFormatter.string(from: date)
+    
+    lazy var chineseDateComponents = CalendarTool.chineseCalendar.dateComponents([.year,.month,.day], from: date)
     
     lazy var chineseMonth = {
-        let str = chineseDateArr[1]
-        if str.hasPrefix("闰") {
-            return "闰" + CalendarTool.chineseMonths[Int(str.dropFirst())! - 1]
+        if let isLeapMonth = chineseDateComponents.isLeapMonth, isLeapMonth {
+            return "闰\(CalendarTool.chineseMonths[chineseDateComponents.month! - 1])"
         }
-        return CalendarTool.chineseMonths[Int(str)! - 1]
+        return CalendarTool.chineseMonths[chineseDateComponents.month! - 1]
     }()
     
     lazy var chineseDay = {
-        CalendarTool.chineseDays[Int(chineseDateArr[2])! - 1]
+        CalendarTool.chineseDays[chineseDateComponents.day! - 1]
     }()
 }
 
@@ -114,7 +110,7 @@ class CalendarTool {
     static let dateFormatter = {
         // Lock down the East Eighth Time Zone and 24 - hour format; modify it yourself if needed.
         let dateFormatter = DateFormatter()
-        dateFormatter.calendar = Calendar(identifier:.iso8601)
+        dateFormatter.calendar = CalendarTool.calendar
         dateFormatter.locale = Locale(identifier: "zh_CN")
         dateFormatter.timeZone = TimeZone(identifier: "Asia/Shanghai")
         dateFormatter.dateFormat = "yyyy-MM-dd"
@@ -124,14 +120,16 @@ class CalendarTool {
     static let chineseDateFormatter = {
         // Lock down the East Eighth Time Zone and 24 - hour format; modify it yourself if needed.
         let dateFormatter = DateFormatter()
-        dateFormatter.calendar = Calendar(identifier: .chinese)
+        dateFormatter.calendar = CalendarTool.chineseCalendar
         dateFormatter.locale = Locale(identifier: "zh_CN")
         dateFormatter.timeZone = TimeZone(identifier: "Asia/Shanghai")
         dateFormatter.dateFormat = "yyyy-MM-dd"
         return dateFormatter
     }()
     
-    private static let calendar = Calendar(identifier:.iso8601)
+    static let calendar = Calendar(identifier:.iso8601)
+    
+    static let chineseCalendar = Calendar(identifier:.chinese)
     
     static let chineseMonths = ["正月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "冬月", "腊月"]
     
